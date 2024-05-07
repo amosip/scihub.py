@@ -35,24 +35,24 @@ class SciHub(object):
     SciHub class can search for papers on Google Scholars 
     and fetch/download papers from sci-hub.io
     """
-
     def __init__(self):
         self.sess = requests.Session()
         self.sess.headers = HEADERS
-        self.available_base_url_list = self._get_available_scihub_urls()
-        self.base_url = self.available_base_url_list[0] + '/'
+        # Set the base URL directly to the current working Sci-Hub URL
+        self.base_url = 'https://sci-hub.gupiaoq.com/'
 
-    def _get_available_scihub_urls(self):
-        '''
-        Finds available scihub urls via https://sci-hub.now.sh/
-        '''
-        urls = []
-        res = requests.get('https://sci-hub.now.sh/')
-        s = self._get_soup(res.content)
-        for a in s.find_all('a', href=True):
-            if 'sci-hub.' in a['href']:
-                urls.append(a['href'])
-        return urls
+
+    # def _get_available_scihub_urls(self):
+    #     '''
+    #     Finds available scihub urls via https://sci-hub.now.sh/
+    #     '''
+    #     urls = []
+    #     res = requests.get('https://sci-hub.now.sh/')
+    #     s = self._get_soup(res.content)
+    #     for a in s.find_all('a', href=True):
+    #         if 'sci-hub.' in a['href']:
+    #             urls.append(a['href'])
+    #     return urls
 
     def set_proxy(self, proxy):
         '''
@@ -66,11 +66,20 @@ class SciHub(object):
                 "https": proxy, }
 
     def _change_base_url(self):
+        """
+        Change the base URL to the next available URL in the list.
+        Raises an exception if no more URLs are available.
+        """
         if not self.available_base_url_list:
-            raise Exception('Ran out of valid sci-hub urls')
+            raise Exception('Ran out of valid Sci-Hub URLs. Please update the URL list.')
         del self.available_base_url_list[0]
-        self.base_url = self.available_base_url_list[0] + '/'
-        logger.info("I'm changing to {}".format(self.available_base_url_list[0]))
+        if self.available_base_url_list:
+            self.base_url = self.available_base_url_list[0] + '/'
+            logger.info(f"Changed base URL to: {self.base_url}")
+        else:
+            logger.error("No more URLs to fallback to.")
+            raise Exception('Ran out of fallback Sci-Hub URLs.')
+
 
     def search(self, query, limit=10, download=False):
         """
